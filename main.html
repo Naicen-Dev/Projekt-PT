@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stadtbibliothek Buxtehude</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+
+    <!-- Header & Navigation -->
+    <header>
+        <nav class="navbar">
+            <a href="main.html" class="logo">
+                <i class="fas fa-book-reader"></i> Stadtbibliothek Buxtehude
+            </a>
+            <ul class="nav-links">
+                <li><a href="main.html" class="active">Startseite</a></li>
+                <li><a href="#">Suche</a></li>
+                <li><a href="#">Informationen</a></li>
+                <li><a href="#">Mein Konto</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Hero / Search Section -->
+    <section class="hero">
+        <h1>Willkommen in der Stadtbibliothek</h1>
+        <p>Finden Sie Ihre nächsten Lieblingsbücher.</p>
+
+        <div class="search-box">
+            <input type="text" class="search-input" placeholder="Titel, Autor oder ISBN suchen...">
+            <button class="search-btn"><i class="fas fa-search"></i> Suchen</button>
+        </div>
+    </section>
+
+    <!-- Main Content Area -->
+    <main class="container">
+        <h2 class="section-title">Neuheiten & Empfehlungen</h2>
+
+        <div class="card-grid">
+            <!-- Placeholder Cards -->
+            <div class="card">
+                <h3>Der große Gatsby</h3>
+                <p>F. Scott Fitzgerald</p>
+                <small>Verfügbar</small>
+            </div>
+            <div class="card">
+                <h3>1984</h3>
+                <p>George Orwell</p>
+                <small>Entliehen bis 12.03.2026</small>
+            </div>
+            <div class="card">
+                <h3>Die Verwandlung</h3>
+                <p>Franz Kafka</p>
+                <small>Verfügbar</small>
+            </div>
+            <div class="card">
+                <h3>Faust</h3>
+                <p>Johann Wolfgang von Goethe</p>
+                <small>Verfügbar</small>
+            </div>
+        </div>
+    </main>
+
+    <!-- Location / Info Section (Optional, could be expanded) -->
+    <section class="container">
+        <h2 class="section-title">Informationen</h2>
+        <p>Wir haben für Sie geöffnet:</p>
+        <ul style="list-style-type: none; margin-top: 10px;">
+            <li>Mo-Fr: 09:00 - 18:00 Uhr</li>
+            <li>Sa: 10:00 - 14:00 Uhr</li>
+        </ul>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-links">
+            <a href="#">Impressum</a>
+            <a href="#">Datenschutz</a>
+            <a href="#">Kontakt</a>
+        </div>
+        <p style="margin-top: 1rem;">&copy; 2026 Stadtbibliothek Buxtehude</p>
+    </footer>
+
+</body>
+
+</html>
