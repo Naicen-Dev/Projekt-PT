@@ -20,9 +20,17 @@ body {
 
 /* Hintergrund-Animation */
 @keyframes gradientBG {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
 }
 
 /* Glassmorphism Navigation */
@@ -32,7 +40,8 @@ body {
     align-items: center;
     padding: 1rem 5%;
     background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px); /* Der Blur-Effekt */
+    backdrop-filter: blur(10px);
+    /* Der Blur-Effekt */
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
     position: sticky;
     top: 0;
@@ -94,7 +103,7 @@ body {
 .hero h1 {
     font-size: 3.5rem;
     margin-bottom: 1rem;
-    text-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    text-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
     animation: fadeInUp 1s ease-out;
 }
 
@@ -120,8 +129,13 @@ body {
     font-size: 1rem;
 }
 
-.search-input::placeholder { color: rgba(255,255,255,0.7); }
-.search-input:focus { outline: none; }
+.search-input::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.search-input:focus {
+    outline: none;
+}
 
 .search-btn {
     background: #fff;
@@ -173,7 +187,9 @@ footer {
     transition: 0.3s;
 }
 
-.footer-links a:hover { opacity: 1; }
+.footer-links a:hover {
+    opacity: 1;
+}
 
 /* Keyframes für Animationen */
 @keyframes fadeInUp {
@@ -181,6 +197,7 @@ footer {
         opacity: 0;
         transform: translateY(30px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
