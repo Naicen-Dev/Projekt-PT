@@ -21,6 +21,7 @@
             <ul class="nav-links">
                 <li><a href="main.html" class="active">Startseite</a></li>
                 <li><a href="#">Suche</a></li>
+                <li><a href="medien.php">Alle Medien</a></li>
                 <li><a href="#">Informationen</a></li>
                 <li><a href="#">Mein Konto</a></li>
             </ul>
