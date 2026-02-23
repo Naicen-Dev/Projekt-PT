@@ -1,9 +1,9 @@
 <?php
 // Datenbank-Konfiguration
 $host = 'localhost';     // Hostname (meistens 'localhost')
-$dbname = 'deine_datenbank'; // Name deiner Datenbank
-$username = 'dein_benutzer'; // Datenbank-Benutzername
-$password = 'dein_passwort'; // Datenbank-Passwort
+$dbname = 'bibliothek'; // Name deiner Datenbank
+$username = 'root'; // Datenbank-Benutzername
+$password = ''; // Datenbank-Passwort
 
 try {
     // PDO-Instanz erstellen (Verbindung aufbauen)
