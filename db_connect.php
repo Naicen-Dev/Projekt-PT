@@ -23,4 +23,3 @@ try {
     // Fehlerbehandlung
     die("Verbindung zur Datenbank fehlgeschlagen: " . $e->getMessage());
 }
-?>
