@@ -20,7 +20,6 @@
             </a>
             <ul class="nav-links">
                 <li><a href="index.php" class="active">Startseite</a></li>
-                <li><a href="suche.php">Suche</a></li>
                 <li><a href="medien.php">Alle Medien</a></li>
                 <li><a href="#">Informationen</a></li>
                 <li><a href="#">Mein Konto</a></li>

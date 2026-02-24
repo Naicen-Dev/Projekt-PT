@@ -11,8 +11,8 @@ if (strlen($query) < 2) {
 $results = [];
 
 // Suche in Medien
-$stmt_medien = $pdo->prepare("SELECT titel, ISBN FROM medium WHERE titel LIKE :q OR ISBN LIKE :q LIMIT 5");
-$stmt_medien->execute(['q' => '%' . $query . '%']);
+$stmt_medien = $pdo->prepare("SELECT titel, ISBN FROM medium WHERE titel LIKE :q1 OR ISBN LIKE :q2 LIMIT 5");
+$stmt_medien->execute(['q1' => '%' . $query . '%', 'q2' => '%' . $query . '%']);
 $medien = $stmt_medien->fetchAll();
 
 foreach ($medien as $m) {
@@ -23,8 +23,8 @@ foreach ($medien as $m) {
 }
 
 // Suche in Autoren
-$stmt_autor = $pdo->prepare("SELECT vorname, nachname FROM autor WHERE CONCAT(vorname, ' ', nachname) LIKE :q OR vorname LIKE :q OR nachname LIKE :q LIMIT 5");
-$stmt_autor->execute(['q' => '%' . $query . '%']);
+$stmt_autor = $pdo->prepare("SELECT vorname, nachname FROM autor WHERE CONCAT(vorname, ' ', nachname) LIKE :q1 OR vorname LIKE :q2 OR nachname LIKE :q3 LIMIT 5");
+$stmt_autor->execute(['q1' => '%' . $query . '%', 'q2' => '%' . $query . '%', 'q3' => '%' . $query . '%']);
 $autoren = $stmt_autor->fetchAll();
 
 foreach ($autoren as $a) {

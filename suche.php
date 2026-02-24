@@ -62,7 +62,6 @@ if (!empty($suchbegriff)) {
             </a>
             <ul class="nav-links">
                 <li><a href="index.php">Startseite</a></li>
-                <li><a href="suche.php" class="active">Suche</a></li>
                 <li><a href="medien.php">Alle Medien</a></li>
                 <li><a href="#">Informationen</a></li>
                 <li><a href="#">Mein Konto</a></li>
