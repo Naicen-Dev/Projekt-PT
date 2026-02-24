@@ -33,8 +33,9 @@
         <h1>Willkommen in der Stadtbibliothek</h1>
         <p>Finden Sie Ihre nächsten Lieblingsbücher.</p>
 
+        <!-- Single search box submitting to suche.php with parameter 'suche' -->
         <form action="suche.php" method="GET" class="search-box">
-            <input type="text" name="titel" class="search-input" placeholder="Titel oder ISBN suchen...">
+            <input type="text" name="suche" class="search-input" placeholder="Titel, Autor oder ISBN suchen...">
             <button type="submit" class="search-btn"><i class="fas fa-search"></i> Suchen</button>
         </form>
     </section>
@@ -95,11 +96,8 @@
                                 div.classList.add('suggestion-item');
                                 div.innerHTML = `<span class="suggestion-text">${item.text}</span> <span class="suggestion-type">${item.type}</span>`;
                                 div.addEventListener('click', () => {
-                                    if (item.type === 'Autor') {
-                                        window.location.href = `suche.php?autor=${encodeURIComponent(item.text)}`;
-                                    } else {
-                                        window.location.href = `suche.php?titel=${encodeURIComponent(item.text)}`;
-                                    }
+                                    // Submit exactly as if typed into the box
+                                    window.location.href = `suche.php?suche=${encodeURIComponent(item.text)}`;
                                 });
                                 suggestionsContainer.appendChild(div);
                             });
