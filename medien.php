@@ -25,7 +25,7 @@ $medien = $stmt->fetchAll();
             </a>
             <ul class="nav-links">
                 <li><a href="index.php">Startseite</a></li>
-                <li><a href="#">Suche</a></li>
+                <li><a href="suche.php">Suche</a></li>
                 <li><a href="medien.php" class="active">Alle Medien</a></li>
                 <li><a href="#">Informationen</a></li>
                 <li><a href="#">Mein Konto</a></li>

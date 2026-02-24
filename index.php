@@ -15,12 +15,12 @@
 
     <header>
         <nav class="navbar">
-            <a href="main.html" class="logo">
+            <a href="index.php" class="logo">
                 <i class="fas fa-book-reader"></i> Stadtbibliothek Buxtehude
             </a>
             <ul class="nav-links">
-                <li><a href="main.html" class="active">Startseite</a></li>
-                <li><a href="#">Suche</a></li>
+                <li><a href="index.php" class="active">Startseite</a></li>
+                <li><a href="suche.php">Suche</a></li>
                 <li><a href="medien.php">Alle Medien</a></li>
                 <li><a href="#">Informationen</a></li>
                 <li><a href="#">Mein Konto</a></li>
@@ -33,10 +33,10 @@
         <h1>Willkommen in der Stadtbibliothek</h1>
         <p>Finden Sie Ihre nächsten Lieblingsbücher.</p>
 
-        <div class="search-box">
-            <input type="text" class="search-input" placeholder="Titel, Autor oder ISBN suchen...">
-            <button class="search-btn"><i class="fas fa-search"></i> Suchen</button>
-        </div>
+        <form action="suche.php" method="GET" class="search-box">
+            <input type="text" name="titel" class="search-input" placeholder="Titel oder ISBN suchen...">
+            <button type="submit" class="search-btn"><i class="fas fa-search"></i> Suchen</button>
+        </form>
     </section>
 
     <!-- main content area -->
@@ -65,6 +65,69 @@
         <p style="margin-top: 1rem;">&copy; 2026 Stadtbibliothek Buxtehude</p>
     </footer>
 
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const searchInput = document.querySelector('.search-input');
+            const searchBox = document.querySelector('.search-box');
+
+            if (searchInput && searchBox) {
+                // Erstelle den Container für die Vorschläge (Suggestions)
+                const suggestionsContainer = document.createElement('div');
+                suggestionsContainer.classList.add('autocomplete-suggestions');
+                searchBox.appendChild(suggestionsContainer);
+
+                searchInput.addEventListener('input', async function () {
+                    const query = this.value.trim();
+                    if (query.length < 2) {
+                        suggestionsContainer.innerHTML = '';
+                        suggestionsContainer.style.display = 'none';
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch(`ajax_suche.php?q=${encodeURIComponent(query)}`);
+                        const data = await response.json();
+
+                        suggestionsContainer.innerHTML = '';
+                        if (data.length > 0) {
+                            data.forEach(item => {
+                                const div = document.createElement('div');
+                                div.classList.add('suggestion-item');
+                                div.innerHTML = `<span class="suggestion-text">${item.text}</span> <span class="suggestion-type">${item.type}</span>`;
+                                div.addEventListener('click', () => {
+                                    if (item.type === 'Autor') {
+                                        window.location.href = `suche.php?autor=${encodeURIComponent(item.text)}`;
+                                    } else {
+                                        window.location.href = `suche.php?titel=${encodeURIComponent(item.text)}`;
+                                    }
+                                });
+                                suggestionsContainer.appendChild(div);
+                            });
+                            suggestionsContainer.style.display = 'block';
+                        } else {
+                            suggestionsContainer.style.display = 'none';
+                        }
+                    } catch (e) {
+                        console.error('Fehler beim Abrufen der Suchvorschläge:', e);
+                    }
+                });
+
+                // Versteckt das Popup, wenn irgendwo anders hingeklickt wird
+                document.addEventListener('click', function (e) {
+                    if (!searchBox.contains(e.target)) {
+                        suggestionsContainer.style.display = 'none';
+                    }
+                });
+
+                // Behält das Popup bei Fokus bei
+                searchInput.addEventListener('focus', function () {
+                    if (suggestionsContainer.innerHTML.trim() !== '') {
+                        suggestionsContainer.style.display = 'block';
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 
 </html>

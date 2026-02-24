@@ -109,6 +109,7 @@ body {
 
 /* Suchbox-Effekte */
 .search-box {
+    position: relative;
     margin-top: 2rem;
     display: flex;
     background: rgba(255, 255, 255, 0.2);
@@ -244,4 +245,51 @@ footer {
     font-size: 3rem;
     color: #fff;
     margin-bottom: 15px;
+}
+
+/* Autocomplete Suggestions */
+.autocomplete-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    margin-top: 10px;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    z-index: 1000;
+    display: none;
+    text-align: left;
+}
+
+.suggestion-item {
+    padding: 12px 20px;
+    color: #333;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    transition: background 0.2s;
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-item:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.suggestion-text {
+    font-weight: 500;
+}
+
+.suggestion-type {
+    font-size: 0.8rem;
+    color: #fff;
+    background: #23a6d5;
+    padding: 3px 8px;
+    border-radius: 10px;
 }
