@@ -49,6 +49,12 @@ $medien = $stmt->fetchAll();
                     <p><strong>ISBN:</strong>
                         <?= htmlspecialchars($medium['ISBN']) ?>
                     </p>
+                    <div style="margin-top: 15px;">
+                        <a href="ausleihen.php?medium_id=<?= $medium['medium_id'] ?>" class="btn-ausleihen"
+                            style="display:inline-block; background-color:#28a745; color:white; padding:8px 12px; text-decoration:none; border-radius:5px; font-weight:bold;">
+                            <i class="fas fa-hand-holding"></i> Ausleihen
+                        </a>
+                    </div>
                 </div>
             <?php endforeach; ?>
         </div>
