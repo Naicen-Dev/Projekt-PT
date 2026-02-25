@@ -94,8 +94,11 @@
                                 div.classList.add('suggestion-item');
                                 div.innerHTML = `<span class="suggestion-text">${item.text}</span> <span class="suggestion-type">${item.type}</span>`;
                                 div.addEventListener('click', () => {
-                                    // Submit exactly as if typed into the box
-                                    window.location.href = `suche.php?suche=${encodeURIComponent(item.text)}`;
+                                    if (item.type === 'Buch' && item.medium_id) {
+                                        window.location.href = `ausleihen.php?medium_id=${item.medium_id}`;
+                                    } else {
+                                        window.location.href = `suche.php?suche=${encodeURIComponent(item.text)}`;
+                                    }
                                 });
                                 suggestionsContainer.appendChild(div);
                             });

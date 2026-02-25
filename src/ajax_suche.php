@@ -11,14 +11,15 @@ if (strlen($query) < 2) {
 $results = [];
 
 // Suche in Medien
-$stmt_medien = $pdo->prepare("SELECT titel, ISBN FROM medium WHERE titel LIKE :q1 OR ISBN LIKE :q2 LIMIT 5");
+$stmt_medien = $pdo->prepare("SELECT medium_id, titel, ISBN FROM medium WHERE titel LIKE :q1 OR ISBN LIKE :q2 LIMIT 5");
 $stmt_medien->execute(['q1' => '%' . $query . '%', 'q2' => '%' . $query . '%']);
 $medien = $stmt_medien->fetchAll();
 
 foreach ($medien as $m) {
     $results[] = [
         'type' => 'Buch',
-        'text' => $m['titel']
+        'text' => $m['titel'],
+        'medium_id' => $m['medium_id']
     ];
 }
 
