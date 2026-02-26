@@ -55,22 +55,23 @@ $ueberfaellig = $stmt->fetchAll();
                         <td style="padding: 10px;"><?= htmlspecialchars($u['titel']) ?>
                             (<?= htmlspecialchars($u['inventarnummer']) ?>)</td>
                         <td style="padding: 10px;">
-                        
+
                             <?= htmlspecialchars($u['vorname'] . ' ' . $u['nachname']) ?><br><small><?= htmlspecialchars($u['email']) ?></small>
                         </td>
 
-                                                <td style="padding: 10px; color: #ff6b6b; font-weight: bold;">
-                            <?= htmlspecialchars($u['frist_bis']) ?></td>
+                        <td style="padding: 10px; color: #ff6b6b; font-weight: bold;">
+                            <?= htmlspecialchars($u['frist_bis']) ?>
+                        </td>
                         <td style="padding: 10px;"><span
                                 style="background: rgba(231, 60, 126, 0.3); padding: 4px 10px; border-radius: 12px;"><?= htmlspecialchars($u['tage_drueber']) ?>
-                                    Tage</span></td>
-                        </tr>
-            <?php endforeach; ?>
-            <?php if (empty($ueberfaellig)): ?>
+                                Tage</span></td>
+                    </tr>
+                <?php endforeach; ?>
+                <?php if (empty($ueberfaellig)): ?>
                     <tr>
                         <td colspan="4" style="padding: 20px; text-align: center;">Aktuell sind keine Medien überfällig. 🎉
-                            </td>
-                        </tr>
+                        </td>
+                    </tr>
                 <?php endif; ?>
             </tbody>
         </table>

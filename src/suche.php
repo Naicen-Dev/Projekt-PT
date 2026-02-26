@@ -2,22 +2,47 @@
 require_once 'db_connect.php';
 
 $suchbegriff = $_GET['suche'] ?? '';
+$autor_id = isset($_GET['autor_id']) ? (int) $_GET['autor_id'] : 0;
 
 $medien = [];
 $autoren = [];
 $suche_ausgefuehrt = false;
 
-if (!empty($suchbegriff)) {
+if ($autor_id > 0) {
+    $suche_ausgefuehrt = true;
+    // Medien eines bestimmten Autors suchen
+    $stmt_medien = $pdo->prepare("
+        SELECT m.*, a.vorname, a.nachname 
+        FROM medium m 
+        JOIN autor a ON m.autor_id = a.autor_id 
+        WHERE a.autor_id = ?
+    ");
+    $stmt_medien->execute([$autor_id]);
+    $medien = $stmt_medien->fetchAll();
+
+    // Autor-Info für Überschrift laden
+    $stmt_a_info = $pdo->prepare("SELECT vorname, nachname FROM autor WHERE autor_id = ?");
+    $stmt_a_info->execute([$autor_id]);
+    $a_info = $stmt_a_info->fetch();
+    if ($a_info) {
+        $suchbegriff = "Bücher von " . $a_info['vorname'] . " " . $a_info['nachname'];
+    }
+} elseif (!empty($suchbegriff)) {
     $suche_ausgefuehrt = true;
 
-    // Suche nach Titel oder ISBN in Medien
-    $stmt_medien = $pdo->prepare("SELECT * FROM medium WHERE titel LIKE :suche OR ISBN LIKE :suche");
-    $stmt_medien->execute(['suche' => '%' . $suchbegriff . '%']);
+    // Suche nach Titel oder ISBN in Medien (inkl. Autor)
+    $stmt_medien = $pdo->prepare("
+        SELECT m.*, a.vorname, a.nachname 
+        FROM medium m 
+        LEFT JOIN autor a ON m.autor_id = a.autor_id 
+        WHERE m.titel LIKE :q1 OR m.ISBN LIKE :q2
+    ");
+    $stmt_medien->execute(['q1' => '%' . $suchbegriff . '%', 'q2' => '%' . $suchbegriff . '%']);
     $medien = $stmt_medien->fetchAll();
 
     // Suche nach Autor (Vorname oder Nachname)
-    $stmt_autor = $pdo->prepare("SELECT * FROM autor WHERE CONCAT(vorname, ' ', nachname) LIKE :suche OR nachname LIKE :suche OR vorname LIKE :suche");
-    $stmt_autor->execute(['suche' => '%' . $suchbegriff . '%']);
+    $stmt_autor = $pdo->prepare("SELECT * FROM autor WHERE CONCAT(vorname, ' ', nachname) LIKE :q1 OR nachname LIKE :q2 OR vorname LIKE :q3");
+    $stmt_autor->execute(['q1' => '%' . $suchbegriff . '%', 'q2' => '%' . $suchbegriff . '%', 'q3' => '%' . $suchbegriff . '%']);
     $autoren = $stmt_autor->fetchAll();
 }
 ?>
@@ -86,6 +111,12 @@ if (!empty($suchbegriff)) {
                                 <div class="media-card">
                                     <i class="fas fa-book media-icon"></i>
                                     <h3><?= htmlspecialchars($medium['titel']) ?></h3>
+                                    <p><strong>Autor:</strong>
+                                        <a href="suche.php?autor_id=<?= $medium['autor_id'] ?>"
+                                            style="color: #23a6d5; text-decoration: none;">
+                                            <?= htmlspecialchars(($medium['vorname'] ?? '') . ' ' . ($medium['nachname'] ?? '')) ?>
+                                        </a>
+                                    </p>
                                     <p><strong>Genre:</strong> <?= htmlspecialchars($medium['genre']) ?></p>
                                     <p><strong>ISBN:</strong> <?= htmlspecialchars($medium['ISBN']) ?></p>
                                     <div style="margin-top: 15px;">
@@ -105,7 +136,12 @@ if (!empty($suchbegriff)) {
                             <?php foreach ($autoren as $autor): ?>
                                 <div class="autor-card">
                                     <i class="fas fa-user autor-icon"></i>
-                                    <h3><?= htmlspecialchars($autor['vorname']) ?>                 <?= htmlspecialchars($autor['nachname']) ?></h3>
+                                    <h3>
+                                        <a href="suche.php?autor_id=<?= $autor['autor_id'] ?>"
+                                            style="color: white; text-decoration: none;">
+                                            <?= htmlspecialchars($autor['vorname']) ?>                 <?= htmlspecialchars($autor['nachname']) ?>
+                                        </a>
+                                    </h3>
                                 </div>
                             <?php endforeach; ?>
                         </div>

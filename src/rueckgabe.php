@@ -56,12 +56,14 @@ $ausleihen = $stmt_list->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
     <meta charset="UTF-8">
     <title>Rückgabe – Stadtbibliothek Buxtehude</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <header>
         <nav class="navbar">
@@ -78,13 +80,15 @@ $ausleihen = $stmt_list->fetchAll();
         <h2 class="section-title"><i class="fas fa-undo"></i> Medienrückgabe</h2>
 
         <?php if ($error): ?>
-            <div style="background: rgba(255,0,0,0.2); border: 1px solid red; padding: 10px; border-radius: 8px; margin-bottom: 20px;">
+            <div
+                style="background: rgba(255,0,0,0.2); border: 1px solid red; padding: 10px; border-radius: 8px; margin-bottom: 20px;">
                 <?= htmlspecialchars($error) ?>
             </div>
         <?php endif; ?>
 
         <?php if ($success): ?>
-            <div style="background: rgba(0,255,0,0.2); border: 1px solid green; padding: 10px; border-radius: 8px; margin-bottom: 20px;">
+            <div
+                style="background: rgba(0,255,0,0.2); border: 1px solid green; padding: 10px; border-radius: 8px; margin-bottom: 20px;">
                 <?= htmlspecialchars($success) ?>
             </div>
         <?php endif; ?>
@@ -101,25 +105,28 @@ $ausleihen = $stmt_list->fetchAll();
             </thead>
             <tbody>
                 <?php foreach ($ausleihen as $a): ?>
-                <tr>
-                    <td><?= htmlspecialchars($a['titel']) ?></td>
-                    <td><?= htmlspecialchars($a['inventarnummer']) ?></td>
-                    <td><?= htmlspecialchars($a['vorname'] . ' ' . $a['nachname']) ?></td>
-                    <td><?= htmlspecialchars($a['frist_bis']) ?></td>
-                    <td>
-                        <a href="rueckgabe.php?ausleihe_id=<?= $a['ausleihe_id'] ?>" 
-                           style="background: #28a745; color: white; padding: 5px 10px; text-decoration: none; border-radius: 4px;"
-                           onclick="return confirm('Möchten Sie dieses Medium wirklich als zurückgegeben markieren?')">
-                           Rückgabe
-                        </a>
-                    </td>
-                </tr>
+                    <tr>
+                        <td><?= htmlspecialchars($a['titel']) ?></td>
+                        <td><?= htmlspecialchars($a['inventarnummer']) ?></td>
+                        <td><?= htmlspecialchars($a['vorname'] . ' ' . $a['nachname']) ?></td>
+                        <td><?= htmlspecialchars($a['frist_bis']) ?></td>
+                        <td>
+                            <a href="rueckgabe.php?ausleihe_id=<?= $a['ausleihe_id'] ?>"
+                                style="background: #28a745; color: white; padding: 5px 10px; text-decoration: none; border-radius: 4px;"
+                                onclick="return confirm('Möchten Sie dieses Medium wirklich als zurückgegeben markieren?')">
+                                Rückgabe
+                            </a>
+                        </td>
+                    </tr>
                 <?php endforeach; ?>
                 <?php if (empty($ausleihen)): ?>
-                    <tr><td colspan="5">Keine aktiven Ausleihen vorhanden.</td></tr>
+                    <tr>
+                        <td colspan="5">Keine aktiven Ausleihen vorhanden.</td>
+                    </tr>
                 <?php endif; ?>
             </tbody>
         </table>
     </main>
 </body>
+
 </html>

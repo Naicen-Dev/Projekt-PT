@@ -131,6 +131,8 @@ $neuheiten = $stmt->fetchAll();
                                 div.addEventListener('click', () => {
                                     if (item.type === 'Buch' && item.medium_id) {
                                         window.location.href = `ausleihen.php?medium_id=${item.medium_id}`;
+                                    } else if (item.type === 'Autor' && item.autor_id) {
+                                        window.location.href = `suche.php?autor_id=${item.autor_id}`;
                                     } else {
                                         window.location.href = `suche.php?suche=${encodeURIComponent(item.text)}`;
                                     }

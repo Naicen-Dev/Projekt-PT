@@ -2,8 +2,12 @@
 session_start();
 require_once 'db_connect.php';
 
-// Alle Medien aus der Datenbank abrufen
-$stmt = $pdo->query("SELECT * FROM medium");
+// Alle Medien aus der Datenbank abrufen (inkl. Autor)
+$stmt = $pdo->query("
+    SELECT m.*, a.vorname, a.nachname 
+    FROM medium m 
+    LEFT JOIN autor a ON m.autor_id = a.autor_id
+");
 $medien = $stmt->fetchAll();
 ?>
 <!DOCTYPE html>
@@ -58,6 +62,12 @@ $medien = $stmt->fetchAll();
                     <h3>
                         <?= htmlspecialchars($medium['titel']) ?>
                     </h3>
+                    <p><strong>Autor:</strong>
+                        <a href="suche.php?autor_id=<?= $medium['autor_id'] ?>"
+                            style="color: #23a6d5; text-decoration: none;">
+                            <?= htmlspecialchars(($medium['vorname'] ?? '') . ' ' . ($medium['nachname'] ?? '')) ?>
+                        </a>
+                    </p>
                     <p><strong>Genre:</strong>
                         <?= htmlspecialchars($medium['genre']) ?>
                     </p>

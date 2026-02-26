@@ -24,14 +24,15 @@ foreach ($medien as $m) {
 }
 
 // Suche in Autoren
-$stmt_autor = $pdo->prepare("SELECT vorname, nachname FROM autor WHERE CONCAT(vorname, ' ', nachname) LIKE :q1 OR vorname LIKE :q2 OR nachname LIKE :q3 LIMIT 5");
+$stmt_autor = $pdo->prepare("SELECT autor_id, vorname, nachname FROM autor WHERE CONCAT(vorname, ' ', nachname) LIKE :q1 OR vorname LIKE :q2 OR nachname LIKE :q3 LIMIT 5");
 $stmt_autor->execute(['q1' => '%' . $query . '%', 'q2' => '%' . $query . '%', 'q3' => '%' . $query . '%']);
 $autoren = $stmt_autor->fetchAll();
 
 foreach ($autoren as $a) {
     $results[] = [
         'type' => 'Autor',
-        'text' => $a['vorname'] . ' ' . $a['nachname']
+        'text' => $a['vorname'] . ' ' . $a['nachname'],
+        'autor_id' => $a['autor_id']
     ];
 }
 

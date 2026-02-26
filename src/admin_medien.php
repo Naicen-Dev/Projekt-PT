@@ -22,8 +22,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         try {
             $pdo->beginTransaction();
 
-            $stmt = $pdo->prepare("INSERT INTO medium (titel, genre, ISBN) VALUES (?, ?, ?)");
-            if ($stmt->execute([$titel, $genre, $isbn])) {
+            // Autor verarbeiten
+            $autor_input = trim($_POST['autor'] ?? '');
+            $autor_id = null;
+            if (!empty($autor_input)) {
+                $name_parts = explode(' ', $autor_input, 2);
+                $vorname = $name_parts[0];
+                $nachname = $name_parts[1] ?? '';
+
+                // Prüfen ob Autor existiert
+                $stmt_a = $pdo->prepare("SELECT autor_id FROM autor WHERE (vorname = ? AND nachname = ?) OR (nachname = '' AND vorname = ?)");
+                $stmt_a->execute([$vorname, $nachname, $autor_input]);
+                $a_res = $stmt_a->fetch();
+
+                if ($a_res) {
+                    $autor_id = $a_res['autor_id'];
+                } else {
+                    $stmt_ins_a = $pdo->prepare("INSERT INTO autor (vorname, nachname) VALUES (?, ?)");
+                    $stmt_ins_a->execute([$vorname, $nachname]);
+                    $autor_id = $pdo->lastInsertId();
+                }
+            }
+
+            $stmt = $pdo->prepare("INSERT INTO medium (titel, genre, ISBN, autor_id) VALUES (?, ?, ?, ?)");
+            if ($stmt->execute([$titel, $genre, $isbn, $autor_id])) {
                 $medium_id = $pdo->lastInsertId();
 
                 // Exemplare automatisch anlegen
@@ -65,11 +87,12 @@ if (isset($_GET['delete_id'])) {
     }
 }
 
-// Alle Medien laden inkl. Exemplar-Zahl
+// Alle Medien laden inkl. Exemplar-Zahl und Autor
 $medien = $pdo->query("
-    SELECT m.*, COUNT(e.exemplar_id) as exemplar_count 
+    SELECT m.*, COUNT(e.exemplar_id) as exemplar_count, a.vorname as autor_vorname, a.nachname as autor_nachname
     FROM medium m 
     LEFT JOIN exemplar e ON m.medium_id = e.medium_id 
+    LEFT JOIN autor a ON m.autor_id = a.autor_id
     GROUP BY m.medium_id 
     ORDER BY m.titel ASC
 ")->fetchAll();
@@ -132,6 +155,7 @@ $medien = $pdo->query("
             <form method="POST">
                 <input type="hidden" name="action" value="add">
                 <input type="text" name="titel" placeholder="Titel" required>
+                <input type="text" name="autor" placeholder="Autor (Vorname Nachname)">
                 <input type="text" name="genre" placeholder="Genre">
                 <input type="text" name="isbn" placeholder="ISBN" required>
                 <input type="number" name="anzahl" placeholder="Anzahl Exemplare" value="1" min="1" max="100"
@@ -147,6 +171,7 @@ $medien = $pdo->query("
                 <tr style="text-align: left;">
                     <th>ID</th>
                     <th>Titel</th>
+                    <th>Autor</th>
                     <th>ISBN</th>
                     <th>Exemplare</th>
                     <th>Aktion</th>
@@ -157,6 +182,7 @@ $medien = $pdo->query("
                     <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
                         <td><?= $m['medium_id'] ?></td>
                         <td><?= htmlspecialchars($m['titel']) ?></td>
+                        <td><?= htmlspecialchars(($m['autor_vorname'] ?? '') . ' ' . ($m['autor_nachname'] ?? '')) ?></td>
                         <td><?= htmlspecialchars($m['ISBN']) ?></td>
                         <td>
                             <span
