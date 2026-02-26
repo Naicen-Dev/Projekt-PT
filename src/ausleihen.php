@@ -1,10 +1,14 @@
 <?php
+require_once 'auth.php'; // Schutz einbinden
 require_once 'db_connect.php';
 
 $error = '';
 $success = '';
 $medium = null;
 $exemplare = [];
+
+// BENUTZER-ID aus Session nehmen (da eingeloggt)
+$session_benutzer_id = $_SESSION['user_id'];
 
 //------------------------------------------------------
 // 1. GET: medium_id aus URL lesen
@@ -36,53 +40,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $post_medium_id = isset($_POST['medium_id']) ? (int) $_POST['medium_id'] : 0;
     $post_exemplar_id = isset($_POST['exemplar_id']) ? (int) $_POST['exemplar_id'] : 0;
-    $post_benutzer_id = isset($_POST['benutzer_id']) ? (int) $_POST['benutzer_id'] : 0;
+    // benutzer_id kommt jetzt sicher aus der Session: $session_benutzer_id
+
     $ausleihdatum = $_POST['ausleihdatum'] ?? date('Y-m-d');
-    $rueckgabedatum = $_POST['rueckgabedatum'] ?? date('Y-m-d', strtotime('+14 days'));
+    $frist_bis = $_POST['frist_bis'] ?? date('Y-m-d', strtotime('+14 days'));
 
     // --- Validierung ---
-    if ($post_exemplar_id < 1 || $post_benutzer_id < 1) {
-        $error = 'Bitte Exemplar und Leser-ID ausfüllen.';
+    if ($post_exemplar_id < 1) {
+        $error = 'Bitte wählen Sie ein Exemplar aus.';
     } else {
-        // Benutzer prüfen
-        $stm_u = $pdo->prepare("SELECT benutzer_id FROM benutzer WHERE benutzer_id = ?");
-        $stm_u->execute([$post_benutzer_id]);
-        if (!$stm_u->fetch()) {
-            $error = "Leser-ID $post_benutzer_id existiert nicht.";
+        // Exemplar prüfen: gehört es zum Medium, ist es verfügbar?
+        $stm_e = $pdo->prepare("SELECT status FROM exemplar WHERE exemplar_id = ? AND medium_id = ?");
+        $stm_e->execute([$post_exemplar_id, $post_medium_id]);
+        $ex = $stm_e->fetch();
+
+        if (!$ex) {
+            $error = 'Ungültiges Exemplar für dieses Medium.';
+        } elseif ($ex['status'] == 0) {
+            $error = 'Dieses Exemplar ist bereits ausgeliehen.';
         } else {
-            // Exemplar prüfen: gehört es zum Medium, ist es verfügbar?
-            $stm_e = $pdo->prepare("SELECT status FROM exemplar WHERE exemplar_id = ? AND medium_id = ?");
-            $stm_e->execute([$post_exemplar_id, $post_medium_id]);
-            $ex = $stm_e->fetch();
+            // --- Ausleihe anlegen (Transaktion) ---
+            try {
+                $pdo->beginTransaction();
 
-            if (!$ex) {
-                $error = 'Ungültiges Exemplar für dieses Medium.';
-            } elseif ($ex['status'] == 0) {
-                $error = 'Dieses Exemplar ist bereits ausgeliehen.';
-            } else {
-                // --- Ausleihe anlegen (Transaktion) ---
-                try {
-                    $pdo->beginTransaction();
+                // Spaltennamen angepasst: frist_bis statt rueckgabedatum
+                $stmt_ins = $pdo->prepare("INSERT INTO ausleihe (exemplar_id, benutzer_id, ausleihdatum, frist_bis) 
+                                           VALUES (?, ?, ?, ?)");
+                $stmt_ins->execute([$post_exemplar_id, $session_benutzer_id, $ausleihdatum, $frist_bis]);
 
-                    $pdo->prepare("INSERT INTO ausleihe (exemplar_id, benutzer_id, ausleihdatum, rueckgabedatum)
-                                   VALUES (?, ?, ?, ?)")
-                        ->execute([$post_exemplar_id, $post_benutzer_id, $ausleihdatum, $rueckgabedatum]);
+                $pdo->prepare("UPDATE exemplar SET status = 0 WHERE exemplar_id = ?")
+                    ->execute([$post_exemplar_id]);
 
-                    $pdo->prepare("UPDATE exemplar SET status = 0 WHERE exemplar_id = ?")
-                        ->execute([$post_exemplar_id]);
+                $pdo->commit();
+                $success = true;
 
-                    $pdo->commit();
-                    $success = true;
-
-                } catch (Exception $e) {
-                    $pdo->rollBack();
-                    $error = 'Datenbankfehler: ' . $e->getMessage();
-                }
-
-                // Exemplarliste nach Ausleihe neu laden
-                $stm3 = $pdo->prepare("SELECT exemplar_id, inventarnummer FROM exemplar WHERE medium_id = ? AND status = 1");
-                $stm3->execute([$post_medium_id]);
-                $exemplare = $stm3->fetchAll();
+            } catch (Exception $e) {
+                $pdo->rollBack();
+                $error = 'Datenbankfehler: ' . $e->getMessage();
             }
         }
     }
@@ -281,18 +275,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
 
                         <div class="form-group">
-                            <label for="benutzer_id"><i class="fas fa-user"></i> Leser-ID (benutzer_id):</label>
-                            <input type="number" name="benutzer_id" id="benutzer_id" min="1" required placeholder="z.B. 1">
-                        </div>
-
-                        <div class="form-group">
                             <label for="ausleihdatum"><i class="fas fa-calendar-alt"></i> Ausleihdatum:</label>
                             <input type="date" name="ausleihdatum" id="ausleihdatum" value="<?= date('Y-m-d') ?>" required>
                         </div>
 
                         <div class="form-group">
-                            <label for="rueckgabedatum"><i class="fas fa-calendar-check"></i> Rückgabedatum:</label>
-                            <input type="date" name="rueckgabedatum" id="rueckgabedatum"
+                            <label for="frist_bis"><i class="fas fa-calendar-check"></i> Rückgabe-Frist:</label>
+                            <input type="date" name="frist_bis" id="frist_bis"
                                 value="<?= date('Y-m-d', strtotime('+14 days')) ?>" required>
                         </div>
 

@@ -1,4 +1,5 @@
 <?php
+session_start();
 require_once 'db_connect.php';
 
 // Alle Medien aus der Datenbank abrufen
@@ -26,8 +27,22 @@ $medien = $stmt->fetchAll();
             <ul class="nav-links">
                 <li><a href="index.php">Startseite</a></li>
                 <li><a href="medien.php" class="active">Alle Medien</a></li>
-                <li><a href="#">Informationen</a></li>
-                <li><a href="#">Mein Konto</a></li>
+                <?php if (isset($_SESSION['user_id'])): ?>
+                    <li><a href="rueckgabe.php"><i class="fas fa-undo"></i> Rückgabe</a></li>
+                    <li><a href="ueberfaellig.php"><i class="fas fa-clock"></i> Überfällig</a></li>
+
+                    <?php if ($_SESSION['rolle'] === 'admin'): ?>
+                        <li><a href="admin_medien.php" style="color: #ffcc00;"><i class="fas fa-user-shield"></i>
+                                Admin-Medien</a></li>
+                        <li><a href="admin_benutzer.php" style="color: #ffcc00;"><i class="fas fa-users-cog"></i> Benutzer</a>
+                        </li>
+                    <?php endif; ?>
+
+                    <li><a href="#"><i class="fas fa-user"></i> <?= htmlspecialchars($_SESSION['voller_name']) ?></a></li>
+                    <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> Abmelden</a></li>
+                <?php else: ?>
+                    <li><a href="login.php"><i class="fas fa-sign-in-alt"></i> Anmelden</a></li>
+                <?php endif; ?>
             </ul>
         </nav>
     </header>

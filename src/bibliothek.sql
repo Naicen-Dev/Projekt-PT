@@ -45,21 +45,23 @@ INSERT INTO `autor` (`autor_id`, `vorname`, `nachname`) VALUES
 
 --
 -- Tabellenstruktur für Tabelle `benutzer`
+-- Login erfolgt über: email + CONCAT(vorname, ' ', nachname)
 --
 
 CREATE TABLE `benutzer` (
-  `benutzer_id` int(11) NOT NULL,
-  `vorname` text NOT NULL,
-  `nachname` text NOT NULL,
-  `email` text NOT NULL
+  `benutzer_id` int(11) NOT NULL AUTO_INCREMENT,
+  `vorname`     varchar(100) NOT NULL,
+  `nachname`    varchar(100) NOT NULL,
+  `email`       varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Daten für Tabelle `benutzer`
+-- Login-Beispiel: E-Mail "lisa.weber@mail.de" + Name "Lisa Weber"
 --
 
 INSERT INTO `benutzer` (`benutzer_id`, `vorname`, `nachname`, `email`) VALUES
-(1, 'Lisa', 'Weber', 'list.weber@mail.de'),
+(1, 'Lisa',  'Weber',  'lisa.weber@mail.de'),
 (2, 'Jonas', 'Becker', 'jonas.becker@mail.de');
 
 -- --------------------------------------------------------
@@ -155,7 +157,9 @@ ALTER TABLE `autor`
 -- Indizes für die Tabelle `benutzer`
 --
 ALTER TABLE `benutzer`
-  ADD PRIMARY KEY (`benutzer_id`);
+  ADD PRIMARY KEY (`benutzer_id`),
+  ADD UNIQUE KEY `email_unique` (`email`(255));
+
 
 --
 -- Indizes für die Tabelle `exemplar`
