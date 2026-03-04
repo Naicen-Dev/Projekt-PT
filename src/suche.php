@@ -1,16 +1,33 @@
 <?php
+/**
+ * suche.php – Suchergebnisseite
+ *
+ * Unterstützt zwei Suchmodi:
+ *   1. ?suche=...    – Freitextsuche nach Titel, ISBN oder Autorenname
+ *   2. ?autor_id=... – Alle Medien eines bestimmten Autors anzeigen
+ *
+ * Ergebnisse werden aufgeteilt in: Gefundene Medien & Gefundene Autoren.
+ */
+
+// Datenbankverbindung einbinden
 require_once 'db_connect.php';
 
-$suchbegriff = $_GET['suche'] ?? '';
-$autor_id = isset($_GET['autor_id']) ? (int) $_GET['autor_id'] : 0;
+// GET-Parameter auslesen
+$suchbegriff = $_GET['suche'] ?? '';              // Freitextbegriff
+$autor_id = isset($_GET['autor_id']) ? (int) $_GET['autor_id'] : 0; // Autor-ID (optional)
 
+// Ergebnis-Arrays
 $medien = [];
 $autoren = [];
-$suche_ausgefuehrt = false;
+$suche_ausgefuehrt = false; // Wird true, sobald mindestens eine Suche ausgeführt wurde
 
+// ------------------------------------------------------------------
+// Suchmodus 1: Alle Medien eines bestimmten Autors (per autor_id)
+// ------------------------------------------------------------------
 if ($autor_id > 0) {
     $suche_ausgefuehrt = true;
-    // Medien eines bestimmten Autors suchen
+
+    // Alle Medien dieses Autors laden
     $stmt_medien = $pdo->prepare("
         SELECT m.*, a.vorname, a.nachname 
         FROM medium m 
@@ -20,17 +37,22 @@ if ($autor_id > 0) {
     $stmt_medien->execute([$autor_id]);
     $medien = $stmt_medien->fetchAll();
 
-    // Autor-Info für Überschrift laden
+    // Autor-Name für die Seitenüberschrift laden
     $stmt_a_info = $pdo->prepare("SELECT vorname, nachname FROM autor WHERE autor_id = ?");
     $stmt_a_info->execute([$autor_id]);
     $a_info = $stmt_a_info->fetch();
     if ($a_info) {
+        // Suchbegriff für die Überschrift setzen (z. B. "Bücher von Max Mustermann")
         $suchbegriff = "Bücher von " . $a_info['vorname'] . " " . $a_info['nachname'];
     }
+
+    // ------------------------------------------------------------------
+// Suchmodus 2: Freitextsuche nach Titel, ISBN oder Autorenname
+// ------------------------------------------------------------------
 } elseif (!empty($suchbegriff)) {
     $suche_ausgefuehrt = true;
 
-    // Suche nach Titel oder ISBN in Medien (inkl. Autor)
+    // Mediensuche: Titel oder ISBN enthält den Suchbegriff (inkl. Autor per LEFT JOIN)
     $stmt_medien = $pdo->prepare("
         SELECT m.*, a.vorname, a.nachname 
         FROM medium m 
@@ -40,7 +62,7 @@ if ($autor_id > 0) {
     $stmt_medien->execute(['q1' => '%' . $suchbegriff . '%', 'q2' => '%' . $suchbegriff . '%']);
     $medien = $stmt_medien->fetchAll();
 
-    // Suche nach Autor (Vorname oder Nachname)
+    // Autorensuche: Vor-/Nachname oder vollständiger Name enthält den Suchbegriff
     $stmt_autor = $pdo->prepare("SELECT * FROM autor WHERE CONCAT(vorname, ' ', nachname) LIKE :q1 OR nachname LIKE :q2 OR vorname LIKE :q3");
     $stmt_autor->execute(['q1' => '%' . $suchbegriff . '%', 'q2' => '%' . $suchbegriff . '%', 'q3' => '%' . $suchbegriff . '%']);
     $autoren = $stmt_autor->fetchAll();
@@ -53,13 +75,18 @@ if ($autor_id > 0) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Suche - Stadtbibliothek Buxtehude</title>
+    <!-- Font Awesome für Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Eigenes Stylesheet -->
     <link rel="stylesheet" href="style.css">
+    <!-- Seitenspezifische Styles -->
     <style>
+        /* Container für den gesamten Ergebnisbereich */
         .results-section {
             margin-top: 2rem;
         }
 
+        /* Karte für einen einzelnen Autoren-Treffer */
         .autor-card {
             background: rgba(255, 255, 255, 0.1);
             border-radius: 15px;
@@ -70,6 +97,7 @@ if ($autor_id > 0) {
             text-align: center;
         }
 
+        /* Großes Icon innerhalb der Autoren-Karte */
         .autor-icon {
             font-size: 3rem;
             color: #fff;
@@ -80,6 +108,7 @@ if ($autor_id > 0) {
 
 <body>
 
+    <!-- Header-Navigation -->
     <header>
         <nav class="navbar">
             <a href="index.php" class="logo">
@@ -95,15 +124,18 @@ if ($autor_id > 0) {
     </header>
 
     <main class="container">
+        <!-- Suchbegriff in der Überschrift anzeigen (XSS-sicher) -->
         <h2 class="section-title">Suchergebnisse für "<?= htmlspecialchars($suchbegriff) ?>"</h2>
 
         <?php if ($suche_ausgefuehrt): ?>
             <div class="results-section">
 
                 <?php if (empty($medien) && empty($autoren)): ?>
+                    <!-- Keine Treffer gefunden -->
                     <p>Leider wurden keine Ergebnisse für Ihre Suchanfrage gefunden.</p>
                 <?php else: ?>
 
+                    <!-- ---- Medien-Ergebnisse ---- -->
                     <?php if (!empty($medien)): ?>
                         <h3>Gefundene Bücher / Medien</h3>
                         <div class="media-grid">
@@ -111,6 +143,7 @@ if ($autor_id > 0) {
                                 <div class="media-card">
                                     <i class="fas fa-book media-icon"></i>
                                     <h3><?= htmlspecialchars($medium['titel']) ?></h3>
+                                    <!-- Autor als klickbarer Link zur Autorensuche -->
                                     <p><strong>Autor:</strong>
                                         <a href="suche.php?autor_id=<?= $medium['autor_id'] ?>"
                                             style="color: #23a6d5; text-decoration: none;">
@@ -120,6 +153,7 @@ if ($autor_id > 0) {
                                     <p><strong>Genre:</strong> <?= htmlspecialchars($medium['genre']) ?></p>
                                     <p><strong>ISBN:</strong> <?= htmlspecialchars($medium['ISBN']) ?></p>
                                     <div style="margin-top: 15px;">
+                                        <!-- Ausleihen-Button -->
                                         <a href="ausleihen.php?medium_id=<?= $medium['medium_id'] ?>" class="btn-ausleihen"
                                             style="display:inline-block; background-color:#28a745; color:white; padding:8px 12px; text-decoration:none; border-radius:5px; font-weight:bold;">
                                             <i class="fas fa-hand-holding"></i> Ausleihen
@@ -130,6 +164,7 @@ if ($autor_id > 0) {
                         </div>
                     <?php endif; ?>
 
+                    <!-- ---- Autoren-Ergebnisse ---- -->
                     <?php if (!empty($autoren)): ?>
                         <h3 style="margin-top: 2rem;">Gefundene Autoren</h3>
                         <div class="media-grid">
@@ -137,6 +172,7 @@ if ($autor_id > 0) {
                                 <div class="autor-card">
                                     <i class="fas fa-user autor-icon"></i>
                                     <h3>
+                                        <!-- Klick auf Autoren-Karte → zeigt alle Werke dieses Autors -->
                                         <a href="suche.php?autor_id=<?= $autor['autor_id'] ?>"
                                             style="color: white; text-decoration: none;">
                                             <?= htmlspecialchars($autor['vorname']) ?>                 <?= htmlspecialchars($autor['nachname']) ?>
@@ -150,11 +186,13 @@ if ($autor_id > 0) {
                 <?php endif; ?>
             </div>
         <?php else: ?>
+            <!-- Hinweis, wenn noch kein Suchbegriff eingegeben wurde -->
             <p>Bitte geben Sie einen Suchbegriff in die Suchleiste ein.</p>
         <?php endif; ?>
 
     </main>
 
+    <!-- Footer -->
     <footer>
         <div class="footer-links">
             <a href="#">Impressum</a>

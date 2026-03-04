@@ -1,27 +1,47 @@
 <?php
+/**
+ * login.php – Login-Seite der Stadtbibliothek
+ *
+ * Zeigt ein Anmeldeformular für bestehende Bibliotheksbenutzer.
+ * Die Authentifizierung erfolgt über E-Mail-Adresse und vollständigen Namen
+ * (kein Passwort – Vereinfachung für Schul-/Demo-Zwecke).
+ *
+ * Nach erfolgreichem Login werden folgende Session-Variablen gesetzt:
+ *   $_SESSION['user_id'], ['email'], ['voller_name'], ['rolle']
+ */
+
+// Session starten, um den Login-Status zu prüfen und zu setzen
 session_start();
 
-// Wenn bereits eingeloggt, direkt weiterleiten
+// Wenn der Benutzer bereits eingeloggt ist, direkt zur Startseite weiterleiten
 if (isset($_SESSION['user_id'])) {
     header('Location: index.php');
     exit;
 }
 
+// Datenbankverbindung einbinden
 require_once 'db_connect.php';
 
+// Variable für Fehlermeldungen initialisieren
 $fehler = '';
 
+// ------------------------------------------------------------------
+// Formular-Verarbeitung (POST-Anfrage)
+// ------------------------------------------------------------------
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Eingaben bereinigen & validieren
+
+    // Eingaben bereinigen: Leerzeichen entfernen, Standardwert '' bei fehlendem Feld
     $email = trim($_POST['email'] ?? '');
     $voller_name = trim($_POST['voller_name'] ?? '');
 
+    // --- Validierung ---
     if ($email === '' || $voller_name === '') {
         $fehler = 'Bitte füllen Sie alle Felder aus.';
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        // E-Mail-Format prüfen
         $fehler = 'Bitte geben Sie eine gültige E-Mail-Adresse ein.';
     } else {
-        // Benutzer in der Datenbank suchen (Prepared Statement)
+        // Benutzer in der Datenbank suchen (Prepared Statement gegen SQL-Injection)
         $stmt = $pdo->prepare(
             'SELECT benutzer_id, vorname, nachname, email, rolle
              FROM benutzer
@@ -31,16 +51,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $benutzer = $stmt->fetch();
 
         if ($benutzer) {
-            // Session absichern und Variablen setzen
+            // Login erfolgreich: Session-ID erneuern (Schutz vor Session-Fixation)
             session_regenerate_id(true);
+
+            // Benutzerinformationen in der Session speichern
             $_SESSION['user_id'] = $benutzer['benutzer_id'];
             $_SESSION['email'] = $benutzer['email'];
             $_SESSION['voller_name'] = $benutzer['vorname'] . ' ' . $benutzer['nachname'];
             $_SESSION['rolle'] = $benutzer['rolle'];
 
+            // Zur Startseite weiterleiten
             header('Location: index.php');
             exit;
         } else {
+            // Kein passender Benutzer gefunden
             $fehler = 'E-Mail-Adresse oder Name nicht korrekt. Bitte prüfen Sie Ihre Eingaben.';
         }
     }
@@ -53,9 +77,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login – Stadtbibliothek Buxtehude</title>
+    <!-- Font Awesome für Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Globales Stylesheet -->
     <link rel="stylesheet" href="style.css">
+    <!-- Seitenspezifische Styles für die Login-Karte -->
     <style>
+        /* Zentriert die Login-Karte vertikal und horizontal */
         .login-wrapper {
             display: flex;
             justify-content: center;
@@ -64,6 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             padding: 2rem;
         }
 
+        /* Glasmorphismus-Karte */
         .login-card {
             background: rgba(255, 255, 255, 0.12);
             backdrop-filter: blur(20px);
@@ -91,6 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin-bottom: 2rem;
         }
 
+        /* Formulargruppe: Label + Input */
         .form-group {
             margin-bottom: 1.4rem;
         }
@@ -104,6 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             letter-spacing: 0.03em;
         }
 
+        /* Icon im Input-Feld (absolut positioniert) */
         .form-group .input-wrapper {
             position: relative;
         }
@@ -133,12 +164,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: rgba(255, 255, 255, 0.5);
         }
 
+        /* Fokus-Effekt für Eingabefelder */
         .form-group input:focus {
             outline: none;
             border-color: rgba(255, 255, 255, 0.7);
             background: rgba(255, 255, 255, 0.2);
         }
 
+        /* Anmelde-Button */
         .btn-login {
             width: 100%;
             padding: 0.85rem;
@@ -163,6 +196,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             transform: translateY(0);
         }
 
+        /* Fehlermeldungs-Box */
         .alert-error {
             background: rgba(231, 60, 126, 0.25);
             border: 1px solid rgba(231, 60, 126, 0.5);
@@ -175,6 +209,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             gap: 0.6rem;
         }
 
+        /* Hinweis-Box unterhalb des Formulars */
         .hint-box {
             margin-top: 1.6rem;
             padding: 0.9rem 1rem;
@@ -189,6 +224,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 
 <body>
+    <!-- Vereinfachter Header nur mit Logo -->
     <header>
         <nav class="navbar">
             <a href="index.php" class="logo">
@@ -197,11 +233,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </nav>
     </header>
 
+    <!-- Login-Karte zentriert im Seitenbereich -->
     <div class="login-wrapper">
         <div class="login-card">
             <h2><i class="fas fa-user-circle"></i> Anmelden</h2>
             <p class="subtitle">Geben Sie Ihre registrierten Daten ein</p>
 
+            <!-- Fehlermeldung anzeigen, wenn $fehler nicht leer ist -->
             <?php if ($fehler !== ''): ?>
                 <div class="alert-error">
                     <i class="fas fa-exclamation-circle"></i>
@@ -209,7 +247,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             <?php endif; ?>
 
+            <!-- Login-Formular (POST an diese Seite selbst) -->
             <form method="POST" action="login.php" novalidate>
+
+                <!-- E-Mail-Feld -->
                 <div class="form-group">
                     <label for="email">E-Mail-Adresse</label>
                     <div class="input-wrapper">
@@ -219,6 +260,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 </div>
 
+                <!-- Namensfeld -->
                 <div class="form-group">
                     <label for="voller_name">Vollständiger Name</label>
                     <div class="input-wrapper">
@@ -228,11 +270,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 </div>
 
+                <!-- Absende-Button -->
                 <button type="submit" class="btn-login">
                     <i class="fas fa-sign-in-alt"></i> Anmelden
                 </button>
             </form>
 
+            <!-- Hinweis für nicht registrierte Benutzer -->
             <div class="hint-box">
                 <i class="fas fa-info-circle"></i>
                 Sind Sie noch nicht registriert? Wenden Sie sich an das Bibliothekspersonal.

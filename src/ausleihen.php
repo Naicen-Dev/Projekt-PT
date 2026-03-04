@@ -1,24 +1,39 @@
 <?php
-require_once 'auth.php'; // Schutz einbinden
+/**
+ * ausleihen.php – Medium ausleihen
+ *
+ * Ablauf:
+ *   1. GET: medium_id aus der URL lesen → Medium + verfügbare Exemplare laden
+ *   2. POST: Ausleihformular verarbeiten → Ausleihe in DB speichern, Exemplar-Status auf 0 setzen
+ *
+ * Zugriff nur für eingeloggte Benutzer (auth.php).
+ */
+
+// Zugriffsprüfung: Nur eingeloggte Benutzer dürfen ausleihen
+require_once 'auth.php';
+
+// Datenbankverbindung einbinden
 require_once 'db_connect.php';
 
+// Statusvariablen initialisieren
 $error = '';
 $success = '';
 $medium = null;
 $exemplare = [];
 
-// BENUTZER-ID aus Session nehmen (da eingeloggt)
+// Eingeloggte Benutzer-ID sicher aus der Session holen
 $session_benutzer_id = $_SESSION['user_id'];
 
-//------------------------------------------------------
-// 1. GET: medium_id aus URL lesen
-//------------------------------------------------------
+// ------------------------------------------------------------------
+// SCHRITT 1 – GET: medium_id aus der URL auslesen
+// ------------------------------------------------------------------
 $medium_id = isset($_GET['medium_id']) ? (int) $_GET['medium_id'] : 0;
 
 if ($medium_id < 1) {
+    // Ungültige oder fehlende medium_id → Fehlermeldung setzen
     $error = 'Keine gültige Medium-ID übergeben.';
 } else {
-    // Medium laden
+    // Medium-Datensatz aus der Datenbank laden
     $stm = $pdo->prepare("SELECT medium_id, ISBN, titel, genre FROM medium WHERE medium_id = ?");
     $stm->execute([$medium_id]);
     $medium = $stm->fetch();
@@ -26,30 +41,32 @@ if ($medium_id < 1) {
     if (!$medium) {
         $error = 'Das angegebene Medium wurde nicht gefunden.';
     } else {
-        // Verfügbare Exemplare laden (status = 1 = verfügbar)
+        // Nur verfügbare Exemplare anzeigen (status = 1 = verfügbar)
         $stm2 = $pdo->prepare("SELECT exemplar_id, inventarnummer FROM exemplar WHERE medium_id = ? AND status = 1");
         $stm2->execute([$medium_id]);
         $exemplare = $stm2->fetchAll();
     }
 }
 
-//------------------------------------------------------
-// 2. POST: Ausleihe verarbeiten
-//------------------------------------------------------
+// ------------------------------------------------------------------
+// SCHRITT 2 – POST: Ausleihformular verarbeiten
+// ------------------------------------------------------------------
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
+    // Formulardaten sicher aus POST holen und numerisch casten
     $post_medium_id = isset($_POST['medium_id']) ? (int) $_POST['medium_id'] : 0;
     $post_exemplar_id = isset($_POST['exemplar_id']) ? (int) $_POST['exemplar_id'] : 0;
-    // benutzer_id kommt jetzt sicher aus der Session: $session_benutzer_id
+    // Benutzer-ID kommt aus der Session (nicht vom Formular – sicherheitsrelevant!)
 
+    // Datum: Standardmäßig heute und in 14 Tagen (Rückgabefrist)
     $ausleihdatum = $_POST['ausleihdatum'] ?? date('Y-m-d');
     $frist_bis = $_POST['frist_bis'] ?? date('Y-m-d', strtotime('+14 days'));
 
-    // --- Validierung ---
+    // --- Eingabevalidierung ---
     if ($post_exemplar_id < 1) {
         $error = 'Bitte wählen Sie ein Exemplar aus.';
     } else {
-        // Exemplar prüfen: gehört es zum Medium, ist es verfügbar?
+        // Prüfen: Gehört das Exemplar zum Medium und ist es verfügbar? (status = 1)
         $stm_e = $pdo->prepare("SELECT status FROM exemplar WHERE exemplar_id = ? AND medium_id = ?");
         $stm_e->execute([$post_exemplar_id, $post_medium_id]);
         $ex = $stm_e->fetch();
@@ -57,24 +74,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$ex) {
             $error = 'Ungültiges Exemplar für dieses Medium.';
         } elseif ($ex['status'] == 0) {
+            // Exemplar ist bereits ausgeliehen
             $error = 'Dieses Exemplar ist bereits ausgeliehen.';
         } else {
-            // --- Ausleihe anlegen (Transaktion) ---
+            // --- Ausleihe anlegen (atomare Datenbank-Transaktion) ---
             try {
                 $pdo->beginTransaction();
 
-                // Spaltennamen angepasst: frist_bis statt rueckgabedatum
+                // Neuen Ausleihe-Datensatz einfügen
                 $stmt_ins = $pdo->prepare("INSERT INTO ausleihe (exemplar_id, benutzer_id, ausleihdatum, frist_bis) 
                                            VALUES (?, ?, ?, ?)");
                 $stmt_ins->execute([$post_exemplar_id, $session_benutzer_id, $ausleihdatum, $frist_bis]);
 
+                // Exemplar-Status auf 0 (ausgeliehen) setzen
                 $pdo->prepare("UPDATE exemplar SET status = 0 WHERE exemplar_id = ?")
                     ->execute([$post_exemplar_id]);
 
                 $pdo->commit();
-                $success = true;
+                $success = true; // Erfolgsmeldung im HTML anzeigen
 
             } catch (Exception $e) {
+                // Bei Fehler: Transaktion rückgängig machen
                 $pdo->rollBack();
                 $error = 'Datenbankfehler: ' . $e->getMessage();
             }
@@ -89,9 +109,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ausleihen – Stadtbibliothek Buxtehude</title>
+    <!-- Font Awesome für Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Globales Stylesheet -->
     <link rel="stylesheet" href="style.css">
+    <!-- Seitenspezifische Styles -->
     <style>
+        /* Hauptkarte für das Ausleih-Formular */
         .ausleih-card {
             background: rgba(255, 255, 255, 0.10);
             border: 1px solid rgba(255, 255, 255, 0.2);
@@ -103,6 +127,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
         }
 
+        /* Medium-Infoanzeige (Titel, Genre, ISBN) */
         .medium-info {
             text-align: center;
             margin-bottom: 25px;
@@ -119,6 +144,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin: 0 0 5px;
         }
 
+        /* Badges für Genre / ISBN */
         .badge {
             display: inline-block;
             background: rgba(255, 255, 255, 0.15);
@@ -128,6 +154,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin: 2px;
         }
 
+        /* Formulargruppe: Label + Input oder Select */
         .form-group {
             margin-bottom: 18px;
         }
@@ -157,6 +184,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border-color: rgba(255, 255, 255, 0.6);
         }
 
+        /* Absende-Button mit grünem Verlauf */
         .btn-submit {
             width: 100%;
             padding: 12px;
@@ -174,6 +202,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             opacity: 0.88;
         }
 
+        /* Allgemeine Alert-Box */
         .alert {
             padding: 14px 18px;
             border-radius: 8px;
@@ -181,12 +210,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             font-weight: 500;
         }
 
+        /* Fehlermeldung (rot) */
         .alert-danger {
             background: #f8d7da;
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
 
+        /* Erfolgsmeldung (grün) */
         .alert-success {
             background: #d4edda;
             color: #155724;
@@ -198,6 +229,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             font-weight: 700;
         }
 
+        /* Link zurück zur Medienliste */
         .back-link {
             display: inline-block;
             margin-bottom: 20px;
@@ -214,6 +246,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 
 <body>
+    <!-- Header-Navigation -->
     <header>
         <nav class="navbar">
             <a href="index.php" class="logo">
@@ -230,12 +263,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <main class="container">
         <h2 class="section-title"><i class="fas fa-hand-holding"></i> Medium ausleihen</h2>
+        <!-- Zurück-Link zur Medienliste -->
         <a href="medien.php" class="back-link"><i class="fas fa-arrow-left"></i> Zurück zur Medienliste</a>
 
+        <!-- Fehlermeldung, falls $error gesetzt -->
         <?php if ($error): ?>
             <div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> <?= htmlspecialchars($error) ?></div>
         <?php endif; ?>
 
+        <!-- Erfolgsmeldung nach abgeschlossener Ausleihe -->
         <?php if ($success): ?>
             <div class="alert alert-success">
                 <i class="fas fa-check-circle"></i>
@@ -244,8 +280,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         <?php endif; ?>
 
+        <!-- Formular nur anzeigen, wenn Medium gefunden und noch keine erfolgreiche Ausleihe -->
         <?php if ($medium && !$success): ?>
             <div class="ausleih-card">
+                <!-- Medium-Informationen anzeigen -->
                 <div class="medium-info">
                     <div class="book-icon"><i class="fas fa-book"></i></div>
                     <h3><?= htmlspecialchars($medium['titel']) ?></h3>
@@ -254,14 +292,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
 
                 <?php if (empty($exemplare)): ?>
+                    <!-- Hinweis: Keine verfügbaren Exemplare vorhanden -->
                     <div class="alert alert-danger" style="text-align:center; margin-top:10px;">
                         <i class="fas fa-times-circle"></i>
                         Leider sind aktuell keine Exemplare dieses Mediums verfügbar.
                     </div>
                 <?php else: ?>
+                    <!-- Ausleihformular: POST an dieselbe URL mit medium_id als Query-Parameter -->
                     <form action="ausleihen.php?medium_id=<?= $medium_id ?>" method="POST">
+                        <!-- Verstecktes Feld: medium_id für die serverseitige Zuordnung -->
                         <input type="hidden" name="medium_id" value="<?= $medium_id ?>">
 
+                        <!-- Exemplar-Auswahl -->
                         <div class="form-group">
                             <label for="exemplar_id"><i class="fas fa-barcode"></i> Exemplar (Inventarnummer):</label>
                             <select name="exemplar_id" id="exemplar_id" required>
@@ -274,11 +316,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </select>
                         </div>
 
+                        <!-- Ausleihdatum (Standard: heute) -->
                         <div class="form-group">
                             <label for="ausleihdatum"><i class="fas fa-calendar-alt"></i> Ausleihdatum:</label>
                             <input type="date" name="ausleihdatum" id="ausleihdatum" value="<?= date('Y-m-d') ?>" required>
                         </div>
 
+                        <!-- Rückgabedatum (Standard: in 14 Tagen) -->
                         <div class="form-group">
                             <label for="frist_bis"><i class="fas fa-calendar-check"></i> Rückgabe-Frist:</label>
                             <input type="date" name="frist_bis" id="frist_bis"
